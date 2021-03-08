@@ -2,20 +2,21 @@ import pyLDAvis.gensim
 import pyLDAvis
 from LDA import neg_lda, neg_corpus, neg_dict, pos_lda, pos_corpus, pos_dict
 
-data2 = pyLDAvis.gensim.prepare(pos_lda, pos_corpus, pos_dict)
-print('以下是正面可视化参数\n')
-print(data2)
+# data2 = pyLDAvis.gensim.prepare(pos_lda, pos_corpus, pos_dict)
+# print('以下是正面可视化参数\n')
+# print(data2)
+# pyLDAvis.save_html(data2, 'postopic.html')
 # pyLDAvis.display(data2)
-pyLDAvis.save_html(data2, 'postopic.html')
-pyLDAvis.show(data2, open_browser=True)
+# pyLDAvis.show(data2, open_browser=True)
 
 
 data1 = pyLDAvis.gensim.prepare(neg_lda, neg_corpus, neg_dict)  #三个参数分别是：计算好的话题模型；文档词频矩阵；词语空间
 print('以下是负面可视化参数\n')
 print(data1)
-# pyLDAvis.display(data1)
-pyLDAvis.show(data1, open_browser=True)
 pyLDAvis.save_html(data1, 'negtopic.html')
+pyLDAvis.display(data1)
+pyLDAvis.show(data1, open_browser=True)
+
 
 
 

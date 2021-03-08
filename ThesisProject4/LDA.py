@@ -3,12 +3,6 @@
 from gensim import corpora, models
 import pandas as pd
 from visualization import pos, neg
-# 类似于scikit-learn
-
-# filepath1 = r'正面情感分词有效版.txt'
-# filepath2 = r'负面情感分词有效版.txt'
-# df1 = pd.read_csv(filepath1, encoding='utf-8', header=0)
-# df2 = pd.read_csv(filepath2, encoding='utf-8', header=0)
 
 # 正面主题分析
 pos_dict = corpora.Dictionary(pos)  # 建立词典，以计算机可以处理的方式（数字）
@@ -23,6 +17,7 @@ LDA_result_pos = pos_lda.print_topics(num_topics=10, num_words=10)
 df_pos = pd.DataFrame(data=LDA_result_pos)
 df_pos.to_excel('LDA_result_pos.xlsx', sheet_name='LDA_result_pos', startcol=0, startrow=0)
 print('LDA_result_pos 成功输出!\n')
+
 # 负面主题分析
 neg_dict = corpora.Dictionary(neg)
 neg_corpus = [neg_dict.doc2bow(i) for i in neg]

@@ -8,19 +8,29 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import wordcloud
 import warnings
-# from scipy.misc import imread
-from importlib import reload
+# from snownlp import seg, SnowNLP
 
+
+# from scipy.misc import imread
+# from importlib import reload
 
 
 def mycut(str1):
-	str1 = ' '.join(jieba.cut(str1))  # 已经关闭了新词发现
+	str1 = ' '.join(jieba.cut(str1))  # 曾经尝试关闭新词发现
 	return str1
 # mycut = lambda s:' '.join(jieba.cut(s))
 
-# 4SnowNLP模块做正负情感分析/或者使用ROSTCM6代替生成
-filepath1 = 'temp_after_filter3_utf8_正面情感结果.txt'
-filepath2 = 'temp_after_filter3_utf8_负面情感结果.txt'
+# 4SnowNLP模块做正负情感分析√/或者使用ROSTCM6代替生成（3.7应用Error）
+filepath1 = r'./foundation_output/pos_data.csv'
+filepath2 = r'./foundation_output/neg_data.csv'
+df1 = pd.read_csv(filepath1, encoding='utf-8', header=0)
+df2 = pd.read_csv(filepath2, encoding='utf-8', header=0)
+df1 = df1['comment']
+df2 = df2['comment']
+print('pos:\n', df1.head(), 'neg\n', df2.head())
+
+'''如果是ROSTCM6就用以下内容去除前缀
+# read_csv(r’F:\Demo\ThesisProject4\cleanoil_output\temp_after_filter3_utf8_正面情感结果.txt')
 df1 = pd.read_csv(filepath1, encoding='utf-8', header=0)
 df2 = pd.read_csv(filepath2, encoding='utf-8', header=0)
 print(df1.head())
@@ -34,24 +44,13 @@ print(df22.head())
 # 输出去除前缀后的内容 用于ROSTCM6生成正负语义网络
 df11.to_csv('正面情感评论_无前缀.txt', index=False, header=False, encoding='utf-8')
 df22.to_csv('负面情感评论_无前缀.txt', index=False, header=False, encoding='utf-8')
-
-'''以下是用snownlp自行分类的代码
-coms=[]
-coms=comments.apply(lambda x: SnowNLP(x).sentiments)
- # 情感分析，coms在0~1之间，以0.5分界，大于0.5，则为正面情感
-pos_data=comments[coms>0.6] # 此处取0.6是为了使的词的情感更强烈点
-neg_data=comments[coms<0.4] # 负面情感数据集
-neutral_data = comments[coms>=0.4 and coms<=0.6]
-pos_data[:5]
-neg_data[:5]
-neutral_data[:5]
 '''
 
 # 5jieba模块做中文分词处理，采用apply()广播形式加快分词速度
-df1 = df1.iloc[:, 0].apply(mycut)
-df11 = pd.DataFrame(df11.apply(mycut))
-df2 = df2.iloc[:, 0].apply(mycut)
-df22 = pd.DataFrame(df22.apply(mycut))
+# df1 = df1.iloc[:, 0].apply(mycut)
+df11 = pd.DataFrame(df1.apply(mycut))
+# df2 = df2.iloc[:, 0].apply(mycut)
+df22 = pd.DataFrame(df2.apply(mycut))
 print('分词处理后正面：\n')
 print(df11.head())
 print('分词处理后负面：\n')
@@ -67,17 +66,17 @@ stop = pd.read_csv(stopfilepath, encoding='utf-8', header=None, sep='dingbangchu
 stop = [' ', ''] + list(stop[0])  # Pandas自动过滤了空格符，这里手动添加，此时stop由df类型转为list类型
 pos = pd.DataFrame(df11.copy())
 neg = pd.DataFrame(df22.copy())
-pos = pos['comments'].apply(lambda s: s.split(' '))  # 定义一个分割函数，然后用apply广播，每行按空格分隔,每行由str转变为list
+pos = pos['comment'].apply(lambda s: s.split(' '))  # 定义一个分割函数，然后用apply广播，每行按空格分隔,每行由str转变为list
 pos = pos.apply(lambda x: [i for i in x if i not in stop])  # 逐词判断是否停用词，思路同上
-neg = neg['comments'].apply(lambda s: s.split(' '))
+neg = neg['comment'].apply(lambda s: s.split(' '))
 neg = neg.apply(lambda x: [i for i in x if i not in stop])
 print('去除停用词后正面：\n')
 print(pos.head())
 print('去除停用词后负面：\n')
 print(neg.head())
 # 输出去除停用词后已分词的内容 用于生成词云以及后续LDA主题分析
-pos.to_csv('正面情感分词有效版.txt', index=False, header=False, encoding='utf-8')
-neg.to_csv('负面情感分词有效版.txt', index=False, header=False, encoding='utf-8')
+pos.to_csv('foundation_output/正面情感分词有效版.txt', index=False, header=False, encoding='utf-8')
+neg.to_csv('foundation_output/负面情感分词有效版.txt', index=False, header=False, encoding='utf-8')
 
 # pos = pd.DataFrame(pos.copy())
 # neg = pd.DataFrame(neg.copy())
@@ -87,7 +86,7 @@ neg.to_csv('负面情感分词有效版.txt', index=False, header=False, encodin
 # print(neg[:5])
 
 # 7词频统计
-# 正面
+# =============正面=============
 all_words = []
 for n in range(0, len(pos)):
 	for i in pos[n]:
@@ -97,13 +96,15 @@ top_10 = word_count.value_counts(sort=True, ascending=False, dropna=True)
 print('正面词频统计TOP10关键词：')
 print(top_10[:10])
 counts_result = dict(Counter(all_words))
+counts_result = dict(sorted(counts_result.items(), key=lambda d: d[1], reverse=True))
+# counts_result.sort(reverse=True)
 # get to k most frequently occuring words
 # counts_result = Counter(all_words).most_common(10)
 # print('正面词频统计字典如下：')
 # print(counts_result)
-with open('正面词频统计.txt', 'w', errors='ignore') as f:
+with open('foundation_output/正面词频统计.txt', 'w', errors='ignore') as f:
 	[f.write(str('{0},{1}\n'.format(key, value))) for key, value in counts_result.items()]
-# 负面
+# =============负面================
 all_words = []
 for n in range(0, len(neg)):
 	for i in neg[n]:
@@ -113,9 +114,11 @@ top_10 = word_count.value_counts(sort=True, ascending=False, dropna=True)
 print('负面词频统计TOP10关键词：')
 print(top_10[:10])
 counts_result = dict(Counter(all_words))
+counts_result = dict(sorted(counts_result.items(), key=lambda d: d[1], reverse=True))
+# counts_result.sort(reverse=True)
 # print('负面词频统计字典如下：')
 # print(counts_result)
-with open('负面词频统计.txt', 'w', errors='ignore') as f:
+with open('foundation_output/负面词频统计.txt', 'w', errors='ignore') as f:
 	[f.write(str('{0},{1}\n'.format(key, value))) for key, value in counts_result.items()]
 # temp_df = pd.DataFrame(counts_result)
 # temp_df.to_csv('词频统计.txt', index=False, header=False, encoding='utf-8')
@@ -133,8 +136,25 @@ warnings.filterwarnings("ignore")
 # back_picture = imread(r"")
 # usa_mask = np.array(Image.open('flower.png'))
 # (2)设置词云参数（源文件应该是分词后并去除停用词的内容，而不是词频表）
+# =============pos_wordcloud=============
+font = r'C:\Windows\Fonts\msyh.ttc'
+wc = wordcloud.WordCloud(
+	background_color="white",
+	height=800,
+	width=1000,
+	font_path=font,
+	prefer_horizontal=0.2,
+	max_words=2000,
+	relative_scaling=0.3,
+	max_font_size=200).generate(str(pos.tolist()))
+plt.imshow(wc, interpolation="nearest")
+plt.axis("off")
+plt.show()
+wc.to_file("ciyun_foundaiton_pos.png")
+print('词云图_正面已生成！')
 # 从文件导入数据：
-f = open('负面情感分词有效版.txt', encoding='utf-8').read()
+# f = open('cleanoil_output\负面情感分词有效版.txt', encoding='utf-8').read()
+# =============neg_wordcloud=============
 font = r'C:\Windows\Fonts\msyh.ttc'
 # pic = imread('')  +mask='pic',
 wc = wordcloud.WordCloud(
@@ -145,7 +165,7 @@ wc = wordcloud.WordCloud(
     prefer_horizontal=0.2,
 	max_words=2000,
 	relative_scaling=0.3,
-	max_font_size=200).generate(f)
+	max_font_size=200).generate(str(neg.tolist()))
 # wc1 = wc.fit_words(counts_result)
 # .generate_from_text(comments)
 # 从DataFrame/pos/neg生成词云
@@ -153,12 +173,10 @@ wc = wordcloud.WordCloud(
 # (3)绘制词云图
 plt.imshow(wc, interpolation="nearest")
 plt.axis("off")
-# plt.figure(figsize=(8, 8))
-# plt.savefig('ciyun_test.jpg', dpi=1000, bbox_inches='tight', quality=95)
 plt.show()
 # (4)保存到本地
-wc.to_file("ciyun2.png")
-print('词云图已生成！')
+wc.to_file("ciyun_foundation_neg.png")
+print('词云图_负面已生成！')
 # plt.savefig('图6.jpg', dpi=600, bbox_inches='tight', quality=95)
 # plt.show()
 
